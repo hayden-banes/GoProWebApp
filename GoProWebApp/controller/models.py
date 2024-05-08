@@ -1,4 +1,5 @@
-import asyncio, threading
+import asyncio, threading, requests
+
 from threading import Thread, Event
 from time import sleep
 from django.db import models
@@ -26,8 +27,7 @@ class GoPro(models.Model):
         return self.identifier
 
     def start(self):
-        if not self.base_url:
-            self.generate_base_url()
+        
 
         _keep_alive = self.get_thread()
 
@@ -55,11 +55,41 @@ class GoPro(models.Model):
 
     async def keep_alive_task(self):
         while self.keep_alive_signal:
+            if not self.connected: await self.connect()
             print(f"running {self.identifier} {self.base_url}")
             sleep(3)
             await self.arefresh_from_db()
 
         if not self.keep_alive_signal: print("Keep alive signal caused stoppage")
+
+    async def connect(self):
+        if not self.base_url:
+            self.generate_base_url()
+        while not self.connected and self.keep_alive_signal:
+            try:
+                print("trying connection")
+                response = self.enable_usb_control()
+                if response.ok:
+                    print("Connected via USB")
+                    self.connected = True
+                    self.save()
+                    return
+            except requests.Timeout as e:
+                print("Failed to enable wired control. Retrying wakeup")
+
+            try:
+                print("Attempting wake up via BLE")
+                # await ble_connect.connect_ble(self.identifier)
+
+            except RuntimeError as e:
+                print(f"Error connecting via BLE")
+
+            print("Waiting for camera")
+            sleep(10)
+            await self.arefresh_from_db()
+
+    def enable_usb_control(self):
+        return requests.get(f"{self.base_url}/gopro/camera/control/wired_usb?p=1", timeout=2)
 
     def is_alive(self) -> bool:
         return self.get_thread().is_alive()

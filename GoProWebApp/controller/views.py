@@ -31,6 +31,11 @@ def stop(request, gopro_id):
     gopro.stop()
     return HttpResponse("Stopped")
 
+def connect(request, gopro_id):
+    gopro = get_object_or_404(GoPro, identifier=gopro_id)
+    gopro.connect()
+    return HttpResponse("Connecting")
+
 class HomeView(View):
     template_path = "controller/home.html"
 

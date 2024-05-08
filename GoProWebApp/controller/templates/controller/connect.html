@@ -9,6 +9,7 @@
     <form action="{% url 'controller:connect' %}" method="post">
         {% csrf_token %}
         {{ form }}
+        {% if  %}{% endif %}
         <input type="submit" value="Connect">
     </form>
 </body>
