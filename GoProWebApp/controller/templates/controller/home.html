@@ -6,13 +6,9 @@
     <title>GoPro Controller</title>
 </head>
 <body>
-    <form action="{% url 'controller:create' %}" method="post"></form>
-    {% csrf_token %}
-    <fieldset>
-        <legend><h1>Choose a GoPro</h1></legend>
-        {% for gopro in gopro_list %}
-            <input type="radio" name ="choice" id={{gopro.id}}>
-        {% endfor %}
-    </fieldset>
+    {% if gopro.connected %}
+    {% else %}
+        <h1>Connect to GoPro: <a href="{% url 'controller:connect' %}">here</a></h1>
+    {% endif %}
 </body>
 </html>
