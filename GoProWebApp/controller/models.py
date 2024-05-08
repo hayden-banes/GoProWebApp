@@ -13,6 +13,7 @@ class GoPro(models.Model):
         default=False, 
         blank=False
     )
+    keep_alive_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
         return self.identifier
@@ -35,5 +36,4 @@ class Timelapse(models.Model):
 
     def __str__(self):
         return str(self.interval)
-
 
