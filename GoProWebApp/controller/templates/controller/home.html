@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoPro Controller</title>
+</head>
+<body>
+    <form action="{% url 'controller:create' %}" method="post"></form>
+    {% csrf_token %}
+    <fieldset>
+        <legend><h1>Choose a GoPro</h1></legend>
+        {% for gopro in gopro_list %}
+            <input type="radio" name ="choice" id={{gopro.id}}>
+        {% endfor %}
+    </fieldset>
+</body>
+</html>
