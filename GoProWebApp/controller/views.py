@@ -21,15 +21,21 @@ def detail(request, timelapse_id):
     timelapse = get_object_or_404(Timelapse, pk=timelapse_id)
     return render(request, "controller/detail.html", {"timelapse": timelapse})
 
-def start(request, gopro_id):
+def gopro_start(request, gopro_id):
     gopro = get_object_or_404(GoPro, identifier=gopro_id)
     gopro.start()
     return HttpResponse("Started")
 
-def stop(request, gopro_id):
+def gopro_stop(request, gopro_id):
     gopro = get_object_or_404(GoPro, identifier=gopro_id)
     gopro.stop()
     return HttpResponse("Stopped")
+
+def timelapse_start(request, timelapse_id):
+    pass
+
+def timelapse_stop(request, timelapse_id):
+    pass
 
 def connect(request, gopro_id):
     gopro = get_object_or_404(GoPro, identifier=gopro_id)
