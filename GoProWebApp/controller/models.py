@@ -4,6 +4,8 @@ from threading import Thread, Event
 from time import sleep
 from django.db import models
 
+from asgiref.sync import sync_to_async
+
 # Create your models here.
 class GoPro(models.Model):
     identifier = models.CharField(
@@ -119,19 +121,83 @@ class GoPro(models.Model):
 
         print("Creating a new thread") 
         # Although it is not ideal to always make a new thread,
-        # it does allow the is_alive check above to always work
+        # it does allow the is_alive check when stopping to always work
         return Thread(target=asyncio.run, args=(self.keep_alive_task(),))
 
 class Timelapse(models.Model):
     gopro = models.OneToOneField(GoPro, on_delete=models.PROTECT)
     interval = models.PositiveIntegerField(default=10)
     photos_taken = models.PositiveIntegerField(default=0)
-    timelapse_preset_url = models.URLField(
-        default="/gopro/camera/presets/load?id=65536"
+    timelapse_preset_url = models.CharField(
+        default="/gopro/camera/presets/load?id=65536", editable=False, max_length=40
     )
-    # Timelapse thread id
-    task_id = models.PositiveIntegerField(blank=True)
+    
+    task_id = models.IntegerField(default=-1)  # Timelapse thread id
+    task_signal = models.BooleanField(default=False, blank=False) # True if timelapse task is active
 
     def __str__(self):
         return str(self.interval)
+    
+    def start(self):
+        _timelapse_task = self.get_thread(self.task_id, self.timelapse_task())
+
+        if _timelapse_task.is_alive():
+            print(f"Timelapse task already running on {self.gopro.identifier}")
+            return
+        
+        print(f"Starting timelapse task for {self.gopro.identifier}")
+        self.task_signal = True
+        _timelapse_task.start()
+        self.task_id = _timelapse_task.ident
+        self.save()
+
+    def stop(self):
+        _timelapse_task = self.get_thread(self.task_id, self.timelapse_task())
+
+        if not _timelapse_task.is_alive():
+            print(f"Timelapse task is not running")
+            return
+
+        self.task_signal = False
+        self.save()
+        if _timelapse_task.is_alive(): # the task may have stopped itself after the signal was set
+            _timelapse_task.join()
+
+        self.task_id = -1
+        self.save()
+        print("Timelapse task stopped")
+
+
+    async def timelapse_task(self):
+        while self.task_signal:
+            try:
+                print("Shutter")
+                self.photos_taken += 1
+                sync_to_async(self.save)
+                sleep(self.interval)
+            except requests.exceptions.RequestException:
+                print("Picture not taken")
+            await self.arefresh_from_db()
+
+
+    # This will eventually be refactored to outside this class, hence the reduntant passing of thread_id
+    def get_thread(self, thread_id, thread_task):
+        # if not self.keep_alive_signal:
+        #     print("Signal to stop. not creating a new thread")
+        #     return
+
+        if thread_id > 0:
+            print(thread_id)
+            for thread in threading.enumerate():
+                print(thread.ident)
+                if thread.ident == thread_id:
+                    print("Found")
+                    return thread
+            print("Not Found")
+
+        print("Creating a new thread") 
+        # Although it is not ideal to always make a new thread,
+        # it does allow the is_alive check when stopping to always work
+        return Thread(target=asyncio.run, args=(thread_task,))
+            
 
