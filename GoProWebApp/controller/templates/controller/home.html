@@ -10,43 +10,40 @@
 {% endblock heading %}
 
 {% block content %}
-    <div class="container py-5">
-        <div class="row">
-            <div class="col-sm">
-                {% if image_list %}
-                    <img src="{{ image_list.0.path }}" class="img-fluid" alt="">
-                {% else %}
-                    <img src="..." class="img-fluid" alt="">
-                {% endif %}
-            </div>
-            <div class="col-sm">
-                {% if gopro.connected %}
-                    <p><b>Connected</b> <i></i></p>
-                    <p>battery: {{ gopro.status.battery }}</p>
-                    <br>
-                    <p>photos taken {{ gopro.status.photos_taken }}</p>
-                    <br>
-                    <p>etc...</p>
-                    <form action="{% url "controller:start" gopro_id='4933' %}" method="get">
-                        <button class="btn btn-primary btn-sm", type="submit">Start</button>
-                    </form>
-                    <form action="{% url "controller:stop" gopro_id='4933' %}" method="get">
-                        <button class="btn btn-primary btn-sm", type="submit">Stop</button>
-                    </form>
-
-                {% else %}
-                    <p>Not Connected:</p>
-                    <form id = "connectForm" action="{% url 'controller:connect' gopro_id='4933' %}" method="get">
-                        {% csrf_token %}
-                        <button class="btn btn-primary btn-sm" id="submitButton" type="submit" value="Connect">
-                            <span class="button-text">Connect</span>
-                            <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-                        </button>
-                    </form>
-                {% endif %}
-            </div>
+    <div class="row">
+        <div class="col-sm">
+            {% if image_list %}
+                <img src="{{ image_list.0.path }}" class="img-fluid" alt="">
+            {% else %}
+                <img src="..." class="img-fluid" alt="">
+            {% endif %}
         </div>
+        <div class="col-sm">
+            {% if gopro.connected %}
+                <p><b>Connected</b> <i></i></p>
+                <p>battery: {{ gopro.status.battery }}</p>
+                <br>
+                <p>photos taken {{ gopro.status.photos_taken }}</p>
+                <br>
+                <p>etc...</p>
+                <form action="{% url "controller:start" gopro_id='4933' %}" method="get">
+                    <button class="btn btn-primary btn-sm", type="submit">Start</button>
+                </form>
+                <form action="{% url "controller:stop" gopro_id='4933' %}" method="get">
+                    <button class="btn btn-primary btn-sm", type="submit">Stop</button>
+                </form>
 
+            {% else %}
+                <p>Not Connected:</p>
+                <form id = "connectForm" action="{% url 'controller:connect' gopro_id='4933' %}" method="get">
+                    {% csrf_token %}
+                    <button class="btn btn-primary btn-sm" id="submitButton" type="submit" value="Connect">
+                        <span class="button-text">Connect</span>
+                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                    </button>
+                </form>
+            {% endif %}
+        </div>
     </div>
     <table class="table table-hover">
         <tr>
