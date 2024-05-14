@@ -22,11 +22,18 @@
             <div class="col-sm">
                 {% if gopro.connected %}
                     <p><b>Connected</b> <i></i></p>
-                    <p>battery</p>
+                    <p>battery: {{ gopro.status.battery }}</p>
                     <br>
-                    <p>photos taken</p>
+                    <p>photos taken {{ gopro.status.photos_taken }}</p>
                     <br>
                     <p>etc...</p>
+                    <form action="{% url "controller:start" gopro_id='4933' %}" method="get">
+                        <button class="btn btn-primary btn-sm", type="submit">Start</button>
+                    </form>
+                    <form action="{% url "controller:stop" gopro_id='4933' %}" method="get">
+                        <button class="btn btn-primary btn-sm", type="submit">Stop</button>
+                    </form>
+
                 {% else %}
                     <p>Not Connected:</p>
                     <form id = "connectForm" action="{% url 'controller:connect' gopro_id='4933' %}" method="get">
