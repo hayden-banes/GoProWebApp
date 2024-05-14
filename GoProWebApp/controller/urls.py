@@ -10,7 +10,9 @@ urlpatterns = [
     path("gopro/stop/<str:gopro_id>/", views.gopro_stop, name="gopro_stop"),
     path("timelapse/start/<str:gopro_id>/", views.timelapse_start, name="timelapse_start"),
     path("timelapse/stop/<str:gopro_id>/", views.timelapse_stop, name="timelapse_stop"),
-    path("connect/<str:gopro_id>/", views.connect, name="connect"),
+    # path("connect/", views.ConnectView.as_view(), name="connectview"),
     path("home/", views.HomeView.as_view(), name="home"),
-    path("connect/", views.ConnectView.as_view(), name="connectview")
+    path("connect/<int:gopro_id>/", views.connect, name="connect"),
+    path("settings/", views.SettingsView.as_view(), name="settings"),
+    path("admin/", views.AdminView.as_view(), name="admin")
 ]
