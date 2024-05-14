@@ -1,6 +1,6 @@
 import asyncio
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse
 from django.views import View
 from django.views.generic.edit import FormView
@@ -11,6 +11,8 @@ from time import sleep
 
 from .models import *
 from .forms import ConnectForm
+
+TEMP_DIR = 'controller/'
 
 # Create your views here.
 def index(request):
@@ -46,31 +48,45 @@ def timelapse_stop(request, gopro_id):
 def connect(request, gopro_id):
     gopro = get_object_or_404(GoPro, identifier=gopro_id)
     gopro.connect()
-    return HttpResponse("Connecting")
+    print("Connecting")
+    sleep(5)
+    return redirect('controller:home')
 
 class HomeView(View):
-    template_path = "controller/home.html"
+    template_path = TEMP_DIR + "home.html" 
 
     def get(self, request):
         gopro = GoPro.objects.get(identifier=4933)
-        return render(request, self.template_path, {"gopro": gopro})
+        return render(request, self.template_path)
+    
+class SettingsView(View):
+    template_path = TEMP_DIR + "settings.html"
+
+    def get(self, request):
+        return render(request, self.template_path)
+    
+class AdminView(View):
+    template_path = TEMP_DIR + "admin.html"
+
+    def get(self, request):
+        return render(request, self.template_path)
 
 # Start/Stop
-class ConnectView(FormView):
-    template_name = "controller/connect.html"
-    form_class = ConnectForm
+# class ConnectView(FormView):
+#     template_name = "controller/connect.html"
+#     form_class = ConnectForm
     
-    def form_valid(self, form):
-        identifier = form.cleaned_data['identifier']
-        gopro, created = GoPro.objects.get_or_create(identifier=identifier)
-        print(f"view alive? {gopro.is_alive()}")
-        if gopro.is_alive():
-            gopro.stop()
-            print(f"view alive after stopping? {gopro.is_alive()}")
-        else:
-            gopro.start()
-            print(f"view alive after starting? {gopro.is_alive()}")
-        return render(self.request, 'controller/detail.html', {'item': gopro})
+#     def form_valid(self, form):
+#         identifier = form.cleaned_data['identifier']
+#         gopro, created = GoPro.objects.get_or_create(identifier=identifier)
+#         print(f"view alive? {gopro.is_alive()}")
+#         if gopro.is_alive():
+#             gopro.stop()
+#             print(f"view alive after stopping? {gopro.is_alive()}")
+#         else:
+#             gopro.start()
+#             print(f"view alive after starting? {gopro.is_alive()}")
+#         return render(self.request, 'controller/detail.html', {'item': gopro})
     
 
     # def get(self, request):

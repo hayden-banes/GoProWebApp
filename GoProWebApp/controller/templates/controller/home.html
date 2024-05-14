@@ -1,14 +1,72 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GoPro Controller</title>
-</head>
-<body>
-    {% if gopro.connected %}
-    {% else %}
-        <h1>Connect to GoPro: <a href="{% url 'controller:connect' %}">here</a></h1>
-    {% endif %}
-</body>
-</html>
+{% extends "controller/base.html" %}
+
+{% block home_active %}
+    active" aria-current="page
+{% endblock home_active %}
+
+
+{% block heading %}
+    Home
+{% endblock heading %}
+
+{% block content %}
+    <div class="container py-5">
+        <div class="row">
+            <div class="col-sm">
+                {% if image_list %}
+                    <img src="{{ image_list.0.path }}" class="img-fluid" alt="">
+                {% else %}
+                    <img src="..." class="img-fluid" alt="">
+                {% endif %}
+            </div>
+            <div class="col-sm">
+                {% if gopro.connected %}
+                    <p><b>Connected</b> <i></i></p>
+                    <p>battery</p>
+                    <br>
+                    <p>photos taken</p>
+                    <br>
+                    <p>etc...</p>
+                {% else %}
+                    <p>Not Connected:</p>
+                    <form id = "connectForm" action="{% url 'controller:connect' gopro_id='4933' %}" method="get">
+                        {% csrf_token %}
+                        <button class="btn btn-primary btn-sm" id="submitButton" type="submit" value="Connect">
+                            <span class="button-text">Connect</span>
+                            <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+    <table class="table table-hover">
+        <tr>
+            <th>Capture date</th><th>Name</th><th>Path</th>
+        </tr>
+        {% if image_list %}
+            {% for image in image_list %}
+                <tr>
+                    <td>{{ image.date | date:"d m y"}}</td>
+                    <td>{{ image.name }}</td>
+                    <td>{{ image.path }}</td>
+                </tr>
+            {% endfor %}
+        {% else %}
+            <h3>Taken picture will appear here</h3>
+            <p>Start taking pictures to begin</p>
+        {% endif %}
+    </table>
+
+    <script>
+        document.getElementById("connectForm").addEventListener("submit", function(){
+            var submitButton = document.getElementById("submitButton");
+            var buttonText = document.getElementById("buttonText");
+            submitButton.querySelector("span.spinner-border").classList.remove("d-none");
+            submitButton.querySelector("span.button-text").innerHTML = "Connecting...";
+            submitButton.disabled = true;
+        });
+    </script>
+{% endblock content %}
+
