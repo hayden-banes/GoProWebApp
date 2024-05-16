@@ -2,6 +2,7 @@ import asyncio, threading, requests
 
 from threading import Thread, Event
 from time import sleep
+from requests.exceptions import RequestException
 from django.db import models
 
 from asgiref.sync import sync_to_async
@@ -103,6 +104,43 @@ class GoPro(models.Model):
 
     def is_connected(self) -> bool:
         return self.connected
+    
+    def get_status(self) -> dict:
+        try:
+            status = {}
+            response_json = requests.get(self.base_url + "/gopro/camera/state", timeout=2).json()
+            status['battery'] = response_json['status']['2']
+            status['photos_remain'] = response_json['status']['34']
+            status['photos_taken'] = response_json['status']['38']
+            status['free_space_kb'] = response_json['status']['54']
+            return status
+
+        except RequestException as e:
+            print("Failed to get status")
+    
+    def start_shutter(self) -> int:
+        try:
+            response = requests.get(self.base_url + "/gopro/camera/shutter/start", timeout=2)
+            return response.status_code
+        except RequestException as e:
+            print("Failed to start shutter")
+
+    def set_auto_powerdown_off(self) -> int:
+        try:
+            OPTIONS = "setting=59&option=0"
+            response = requests.get(self.base_url + "/gopro/camera/setting" + "?" + OPTIONS, timeout=2)
+            return response.status_code
+        except RequestException as e:
+            print("Failed to turn auto powerdown off")
+
+    def set_auto_powerdown_on(self) -> int:
+        try:
+            url = self.base_url + "/gopro/camera/setting?setting=59&option=4"
+            response = requests.get(url, timeout=2)
+            return response.status_code
+        except RequestException as e:
+            print("Failed to turn autopower down on")
+
 
 class Timelapse(models.Model):
     gopro = models.OneToOneField(GoPro, on_delete=models.PROTECT)
@@ -149,6 +187,6 @@ class Timelapse(models.Model):
                 self.photos_taken += 1
                 sync_to_async(self.save)
                 sleep(self.interval)
-            except requests.exceptions.RequestException:
+            except RequestException:
                 print("Picture not taken")
             await self.arefresh_from_db()
