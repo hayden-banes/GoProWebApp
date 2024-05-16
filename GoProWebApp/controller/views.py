@@ -45,8 +45,8 @@ def timelapse_stop(request, gopro_id):
     timelapse.stop()
     return HttpResponse("Stopped")
 
-def connect(request, gopro_id):
-    gopro = get_object_or_404(GoPro, identifier=gopro_id)
+def connect(request):
+    gopro = get_object_or_404(GoPro, identifier='4933')
     gopro.connect()
     print("Connecting")
     sleep(5)
@@ -57,6 +57,8 @@ class HomeView(View):
 
     def get(self, request):
         gopro = GoPro.objects.get(identifier=4933)
+        timelapse = get_object_or_404(
+            Timelapse, gopro=gopro)
         return render(request, self.template_path)
     
 class SettingsView(View):
