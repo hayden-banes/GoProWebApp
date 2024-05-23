@@ -10,6 +10,12 @@ from asgiref.sync import sync_to_async
 from .thread_manager import ThreadManager
 
 # Create your models here.
+class Image(models.Model):
+	date_time = models.DateTimeField(auto_now_add=True)
+	path = models.FilePathField()
+	name = models.CharField(max_length=20)
+	size = models.FloatField()
+
 class GoPro(models.Model):
 	identifier = models.CharField(
 		max_length=4,
@@ -216,9 +222,12 @@ class Timelapse(models.Model):
 		while self.task_signal:
 			try:
 				print("Shutter")
+				image = Image(path='', size=0.0, name='test')
+				await sync_to_async(image.save)()
 				self.photos_taken += 1
 				await sync_to_async(self.save)()
 				sleep(self.interval)
 			except RequestException:
 				print("Picture not taken")
-			await self.arefresh_from_db()
+			# await self.arefresh_from_db()
+
