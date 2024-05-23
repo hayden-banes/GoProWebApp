@@ -53,7 +53,7 @@
         {% if image_list %}
             {% for image in image_list %}
                 <tr>
-                    <td>{{ image.date | date:"d m y"}}</td>
+                    <td>{{ image.date_time | date:"G:i:s d-m-Y"}}</td>
                     <td>{{ image.name }}</td>
                     <td>{{ image.path }}</td>
                 </tr>

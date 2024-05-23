@@ -70,11 +70,20 @@ class HomeView(View):
         gopro = GoPro.objects.get(identifier=GOPRO_ID)
         status = gopro.get_status()
         timelapse = get_object_or_404(Timelapse, gopro=gopro)
-        # image_list = TODO: add image model
+        image_list = Image.objects.order_by("date_time")[:20]
 
         timelapse_action = 'stop' if timelapse.task_signal else 'start'
         # image_list =
-        return render(request, self.template_path, {"gopro": gopro, "status": status, "timelapse_action": timelapse_action})
+        return render(
+					request, 
+					self.template_path, 
+					{
+						"gopro": gopro, 
+						"status": status, 
+						"timelapse_action": timelapse_action,
+            "image_list": image_list
+					}
+				)
 
 
 class SettingsView(View):
