@@ -22,25 +22,23 @@
         <div class="col-sm">
             {% if gopro.connected %}
                 <p><b>Connected</b> <i></i></p>
-                <p>battery: {{ gopro.status.battery }}</p>
+                <p>battery: {{ status.battery }}</p>
                 <br>
-                <p>photos taken {{ gopro.status.photos_taken }}</p>
+                <p>photos taken {{ status.photos_taken }}</p>
                 <br>
                 <p>etc...</p>
-                <form action="{% url "controller:start" %}" method="post">
-                    {% csrf_token %}
-                    <button class="btn btn-primary btn-sm", type="submit">Start</button>
+                <form id="timelapseActionForm" action="{% url "controller:timelapse_"|add:timelapse_action %}" method="post">
+									{% csrf_token %}
+									<button class="btn btn-primary btn-sm" id="timelapseActionButton" type="submit">
+										<span class="timelapse-button-text">{{ timelapse_action|capfirst }}</span>
+										<span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+									</button>
                 </form>
-                <form action="{% url "controller:stop" %}" method="post">
-                    {% csrf_token %}
-                    <button class="btn btn-primary btn-sm", type="submit">Stop</button>
-                </form>
-
             {% else %}
                 <p>Not Connected:</p>
                 <form id = "connectForm" action="{% url 'controller:connect' %}" method="post">
                     {% csrf_token %}
-                    <button class="btn btn-primary btn-sm" id="submitButton" type="submit" value="Connect">
+                    <button class="btn btn-primary btn-sm" id="submitButton" type="submit">
                         <span class="button-text">Connect</span>
                         <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                     </button>
@@ -67,13 +65,26 @@
     </table>
 
     <script>
-        document.getElementById("connectForm").addEventListener("submit", function(){
-            var submitButton = document.getElementById("submitButton");
-            var buttonText = document.getElementById("buttonText");
-            submitButton.querySelector("span.spinner-border").classList.remove("d-none");
-            submitButton.querySelector("span.button-text").innerHTML = "Connecting...";
-            submitButton.disabled = true;
-        });
+			{% if gopro.connected is False %}
+				document.getElementById("connectForm").addEventListener("submit", function(){
+					var submitButton = document.getElementById("submitButton");
+					var buttonText = submitButton.querySelector("span.button-text");
+
+					submitButton.querySelector("span.spinner-border").classList.remove("d-none");
+					submitButton.querySelector("span.button-text").innerHTML = "Connecting...";
+					submitButton.disabled = true;
+				});
+			{% endif %}
+			document.getElementById("timelapseActionForm").addEventListener("submit", function(){
+				var submitButton = document.getElementById("timelapseActionButton");
+				var buttonText = submitButton.querySelector("span.timelapse-button-text");
+
+				if (buttonText.innerHTML.trim() === "Stop") {
+					submitButton.querySelector("span.spinner-border").classList.remove("d-none");
+					buttonText.innerHTML = "Stopping...";
+					submitButton.disabled = true;
+				}
+      });
     </script>
 {% endblock content %}
 

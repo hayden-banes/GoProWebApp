@@ -13,60 +13,77 @@ from .models import *
 from .forms import ConnectForm
 
 TEMP_DIR = 'controller/'
+GOPRO_ID = 4933
 
 # Create your views here.
+
+
 def index(request):
     timelapse_list = Timelapse.objects.all()
     return render(request, "controller/index.html", {"timelapse_list": timelapse_list})
+
 
 def detail(request, timelapse_id):
     timelapse = get_object_or_404(Timelapse, pk=timelapse_id)
     return render(request, "controller/detail.html", {"item": timelapse})
 
-def gopro_start(request, gopro_id):
-    gopro = get_object_or_404(GoPro, identifier=gopro_id)
+
+def gopro_start(request):
+    gopro = get_object_or_404(GoPro, identifier=GOPRO_ID)
     gopro.start()
     return HttpResponse("Started")
 
-def gopro_stop(request, gopro_id):
-    gopro = get_object_or_404(GoPro, identifier=gopro_id)
+
+def gopro_stop(request):
+    gopro = get_object_or_404(GoPro, identifier=GOPRO_ID)
     gopro.stop()
     return HttpResponse("Stopped")
 
-def timelapse_start(request, gopro_id):
-    timelapse = get_object_or_404(Timelapse, gopro=GoPro.objects.get(identifier=gopro_id))
-    timelapse.start()
-    return HttpResponse("Started")
-    
 
-def timelapse_stop(request, gopro_id):
+def timelapse_start(request):
     timelapse = get_object_or_404(
-        Timelapse, gopro=GoPro.objects.get(identifier=gopro_id))
-    timelapse.stop()
-    return HttpResponse("Stopped")
-
-def connect(request):
-    gopro = get_object_or_404(GoPro, identifier='4933')
-    gopro.connect()
-    print("Connecting")
-    sleep(5)
+        Timelapse, gopro=GoPro.objects.get(identifier=GOPRO_ID))
+    timelapse.start()
+    print("Timelapse started")
     return redirect('controller:home')
 
+
+def timelapse_stop(request):
+    timelapse = get_object_or_404(
+        Timelapse, gopro=GoPro.objects.get(identifier=GOPRO_ID))
+    timelapse.stop()
+    print("Timelapse stopped")
+    return redirect('controller:home')
+
+
+def connect(request):
+    gopro = get_object_or_404(GoPro, identifier=GOPRO_ID)
+    gopro.start()
+    print("Connecting")
+    return redirect('controller:home')
+
+
 class HomeView(View):
-    template_path = TEMP_DIR + "home.html" 
+    template_path = TEMP_DIR + 'home.html'
 
     def get(self, request):
-        gopro = GoPro.objects.get(identifier=4933)
-        timelapse = get_object_or_404(
-            Timelapse, gopro=gopro)
-        return render(request, self.template_path)
-    
+        gopro = GoPro.objects.get(identifier=GOPRO_ID)
+        status = gopro.get_status()
+        timelapse = get_object_or_404(Timelapse, gopro=gopro)
+        # image_list = TODO: add image model
+
+        timelapse_action = 'stop' if timelapse.task_signal else 'start'
+        # image_list =
+        return render(request, self.template_path, {"gopro": gopro, "status": status, "timelapse_action": timelapse_action})
+
+
 class SettingsView(View):
     template_path = TEMP_DIR + "settings.html"
 
     def get(self, request):
         return render(request, self.template_path)
-    
+
+
 class AdminView(View):
     template_path = TEMP_DIR + "admin.html"
 
@@ -77,7 +94,7 @@ class AdminView(View):
 # class ConnectView(FormView):
 #     template_name = "controller/connect.html"
 #     form_class = ConnectForm
-    
+
 #     def form_valid(self, form):
 #         identifier = form.cleaned_data['identifier']
 #         gopro, created = GoPro.objects.get_or_create(identifier=identifier)
@@ -89,7 +106,6 @@ class AdminView(View):
 #             gopro.start()
 #             print(f"view alive after starting? {gopro.is_alive()}")
 #         return render(self.request, 'controller/detail.html', {'item': gopro})
-    
 
     # def get(self, request):
     #     return render(request, self.template_name, {"form":self.form})
@@ -101,6 +117,5 @@ class AdminView(View):
     #         gopro = GoPro.objects.get(identifier = form.cleaned_data["identifier"])
     #         t: Thread = GoProObj.get_keep_alive_thread(gopro.identifier)
     #         return HttpResponse(str(t.ident))
-        
+
     #     return HttpResponse(form.errors)
-        

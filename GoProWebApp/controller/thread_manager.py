@@ -26,3 +26,12 @@ class ThreadManager:
         print("Creating new thread")
 
         return threading.Thread(target=asyncio.run, args=(thread_target,))
+    
+    @staticmethod
+    def check_thread(thread_id) -> bool:
+        if thread_id > 0:
+            for thread in threading.enumerate():
+                if thread.ident == thread_id:
+                    return thread.is_alive()
+        
+        return False
