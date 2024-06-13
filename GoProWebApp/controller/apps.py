@@ -9,6 +9,6 @@ class ControllerConfig(AppConfig):
         from .models import GoPro
         print('PRE --')
         print(GoPro.objects.all().values())
-        GoPro.objects.all().update(connected=False)
+        GoPro.objects.all().update(connected=False, keep_alive_id=-1)
         print('POST --')
         print(GoPro.objects.all().values())
