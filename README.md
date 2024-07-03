@@ -1,5 +1,5 @@
 # GoProWebApp
-Control and manage a GoPro camera for timelapses, on the web!
+Control and manage a GoPro camera for timelapses, through your browser.
 
 Supports:
 - Start/stop timelapses
