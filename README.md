@@ -1,7 +1,7 @@
 # GoProWebApp
 Control and manage a GoPro camera for timelapses, through your browser.
 
-Supports:
+### Support:
 - Start/stop timelapses
 - Change timelapse interval
 - Preview of last image taken
@@ -16,4 +16,4 @@ Supports:
 - Connect to the camera through the web app
 
 ### Issues and contributing
-This is an ongoing project so there are features in development / planned. If you have any ideas / suggestions, or discover an issue, please create and issue or fork this repo and create pull request.
+This is a WIP project so there are features in development / planned. If you have any ideas / suggestions, or discover an issue, please create and issue or fork this repo and create pull request.
