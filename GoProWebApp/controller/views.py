@@ -70,7 +70,7 @@ class HomeView(View):
         gopro = GoPro.objects.get(identifier=GOPRO_ID)
         status = gopro.get_status()
         timelapse = get_object_or_404(Timelapse, gopro=gopro)
-        image_list = Image.objects.order_by("date_time")[:20]
+        image_list = Image.objects.order_by("-date_time")[:20]
 
         timelapse_action = 'stop' if timelapse.task_signal else 'start'
         # image_list =

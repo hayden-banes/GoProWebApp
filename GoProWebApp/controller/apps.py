@@ -7,8 +7,8 @@ class ControllerConfig(AppConfig):
 
     def ready(self):
         from .models import GoPro
-        print('PRE --')
-        print(GoPro.objects.all().values())
+        # print('PRE --')
+        # print(GoPro.objects.all().values())
         GoPro.objects.all().update(connected=False, keep_alive_id=-1)
-        print('POST --')
-        print(GoPro.objects.all().values())
+        # print('POST --')
+        # print(GoPro.objects.all().values())

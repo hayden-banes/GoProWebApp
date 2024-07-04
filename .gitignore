@@ -168,3 +168,4 @@ cython_debug/
 
 # image folder
 GoProWebApp/controller/static/**
+GoProWebApp/controller/media/**

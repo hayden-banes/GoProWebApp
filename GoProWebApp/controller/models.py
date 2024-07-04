@@ -1,3 +1,5 @@
+from pathlib import Path
+from django.conf import settings
 import asyncio, threading, requests
 
 from threading import Thread, Event
@@ -55,7 +57,7 @@ class GoPro(models.Model):
 	# 	else:
 	# 		print("I'm not running")
 
-	def start(self):
+	def start(self): #TODO rename to [dis]connect
 		if self.keep_alive_signal:
 			print("Keep alive signal is already active, verifying thread")
 			if ThreadManager.check_thread(self.keep_alive_id):
@@ -89,7 +91,7 @@ class GoPro(models.Model):
 				if not self.connected: 
 					print("not connected")
 					await self.connect()
-				print(f"running {self.identifier} {self.base_url}")
+				# print(f"running {self.identifier} {self.base_url}")
 				requests.get(url, timeout=2) #TODO refactor outside of function
 			except RequestException:
 				print("Failed to communicate with GoPro")
@@ -156,12 +158,53 @@ class GoPro(models.Model):
 		except RequestException as e:
 			print("Failed to get status")
 	
-	def start_shutter(self) -> int:
+	async def start_shutter(self) -> int:
 		try:
+			print("Shutter")
 			response = requests.get(self.base_url + "/gopro/camera/shutter/start", timeout=2)
 			return response.status_code
+		
 		except RequestException as e:
 			print("Failed to start shutter")
+
+	async def download_latest(self, delete) -> str:
+		dest_path = (Path(__file__).parent / "media/images/").resolve()
+		print(dest_path)
+		response = requests.get(self.base_url + '/gopro/media/list', timeout=2).json()
+
+		latest_img_dir = response['media'][-1]['d']
+		latest_img_name = response['media'][-1]['fs'][-1]['n']
+		latest_img_size = response['media'][-1]['fs'][-1]['s']
+
+		await self.download_media(dest_path, latest_img_dir, latest_img_name, latest_img_size)
+
+		if delete:
+			self.delete_media(latest_img_dir, latest_img_name)
+
+		# return dest_path / latest_img_dir / latest_img_name
+
+	def delete_media(self, srcfolder, srcimage):
+		url = self.base_url + f"/gopro/media/delete/file?path={srcfolder}/{srcimage}"
+		requests.get(url, timeout=2)
+	
+	async def download_media(self, path, srcfolder, srcimage, size):
+		url = self.base_url + f"/videos/DCIM/{srcfolder}/{srcimage}"
+		path = f"{path}/{srcimage}"
+		print(path)
+
+		try:
+			#Download Image
+			with requests.get(url, timeout=2, stream=True) as response:
+				response.raise_for_status()
+				with open(path, 'wb') as f:
+					f.write(response.content)
+
+			# Store image reference in db
+			image = Image(path=path, size=size, name=srcimage)
+			await sync_to_async(image.save)()
+
+		except requests.exceptions.RequestException as e:
+			print("error")
 
 	def set_auto_powerdown_off(self) -> int:
 		try:
@@ -219,14 +262,15 @@ class Timelapse(models.Model):
 
 
 	async def timelapse_task(self):
+		inter = 3
 		while self.task_signal:
 			try:
-				print("Shutter")
-				image = Image(path='', size=0.0, name='test')
-				await sync_to_async(image.save)()
+				await self.gopro.start_shutter()
 				self.photos_taken += 1
+				sleep(inter)
+				await self.gopro.download_latest(delete=True)
 				await sync_to_async(self.save)()
-				sleep(self.interval)
+				sleep(self.interval-inter)
 			except RequestException:
 				print("Picture not taken")
 			# await self.arefresh_from_db()
