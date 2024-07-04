@@ -185,7 +185,7 @@ class GoPro(models.Model):
 		# Target URL
 		url = self.base_url + f"/videos/DCIM/{srcfolder}/{srcimage}"
 		# Path file will be saved in
-		path = (Path(__file__).parent / "media/images").resolve()
+		path = (Path(__file__).parent / "static/controller/images").resolve()
 
 		try:
 			#Download Image

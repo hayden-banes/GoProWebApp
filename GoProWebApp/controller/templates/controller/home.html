@@ -14,7 +14,7 @@
     <div class="row">
         <div class="col-sm">
             {% if image_list %}
-            <img src="{{ image_list.0.path|add:"/"|add:image_list.0.name }}" class="img-fluid" alt="">
+            <img src=" {% static 'controller/images/'|add:image_list.0.name %}" class="img-fluid" alt="">
             {% else %}
                 <img src="{% static 'controller/GOPR4764.JPG'%}" class="img-fluid" alt="">
             {% endif %}

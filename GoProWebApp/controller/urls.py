@@ -1,3 +1,6 @@
+from django.conf import settings
+from django.conf.urls.static import static
+
 from django.urls import path
 
 from . import views
@@ -16,3 +19,4 @@ urlpatterns = [
     path("settings/", views.SettingsView.as_view(), name="settings"),
     path("admin/", views.AdminView.as_view(), name="admin")
 ]
+
