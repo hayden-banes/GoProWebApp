@@ -12,6 +12,5 @@
 from pathlib import Path
 
 
-dest_path = (Path(__file__).parent / "../media/images/").resolve()
+dest_path = path = (Path(__file__).parent / "media/images").resolve()
 print(dest_path)
-print(f"{dest_path}/" + "GOPRO1001.JPG")

@@ -16,7 +16,7 @@ class Image(models.Model):
 	date_time = models.DateTimeField(auto_now_add=True)
 	path = models.FilePathField()
 	name = models.CharField(max_length=20)
-	size = models.FloatField()
+	size = models.FloatField(null=True)
 
 class GoPro(models.Model):
 	identifier = models.CharField(
@@ -168,43 +168,42 @@ class GoPro(models.Model):
 			print("Failed to start shutter")
 
 	async def download_latest(self, delete) -> str:
-		dest_path = (Path(__file__).parent / "media/images/").resolve()
-		print(dest_path)
+		# Determine folder and name of latest media
 		response = requests.get(self.base_url + '/gopro/media/list', timeout=2).json()
-
 		latest_img_dir = response['media'][-1]['d']
 		latest_img_name = response['media'][-1]['fs'][-1]['n']
-		latest_img_size = response['media'][-1]['fs'][-1]['s']
 
-		await self.download_media(dest_path, latest_img_dir, latest_img_name, latest_img_size)
+		# Start single file download
+		await self.download_media(latest_img_dir, latest_img_name)
 
 		if delete:
 			self.delete_media(latest_img_dir, latest_img_name)
 
 		# return dest_path / latest_img_dir / latest_img_name
-
-	def delete_media(self, srcfolder, srcimage):
-		url = self.base_url + f"/gopro/media/delete/file?path={srcfolder}/{srcimage}"
-		requests.get(url, timeout=2)
 	
-	async def download_media(self, path, srcfolder, srcimage, size):
+	async def download_media(self, srcfolder, srcimage):
+		# Target URL
 		url = self.base_url + f"/videos/DCIM/{srcfolder}/{srcimage}"
-		path = f"{path}/{srcimage}"
-		print(path)
+		# Path file will be saved in
+		path = (Path(__file__).parent / "media/images").resolve()
 
 		try:
 			#Download Image
 			with requests.get(url, timeout=2, stream=True) as response:
 				response.raise_for_status()
-				with open(path, 'wb') as f:
+				with open(f"{path}/{srcimage}", 'wb') as f:
 					f.write(response.content)
 
 			# Store image reference in db
-			image = Image(path=path, size=size, name=srcimage)
+			image = Image(path=path, name=srcimage)
 			await sync_to_async(image.save)()
 
 		except requests.exceptions.RequestException as e:
 			print("error")
+
+	def delete_media(self, srcfolder, srcimage):
+		url = self.base_url + f"/gopro/media/delete/file?path={srcfolder}/{srcimage}"
+		requests.get(url, timeout=2)
 
 	def set_auto_powerdown_off(self) -> int:
 		try:
