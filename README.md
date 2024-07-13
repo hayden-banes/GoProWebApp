@@ -6,7 +6,7 @@ Control and manage a GoPro camera for timelapses, through your browser.
 - Preview of last image taken
 - Media list
 - Automatic media download
-- Many more features in development or planned, my long term goal is to support the camera's entire REST API
+- Many more features in development or planned, my long term goal is to support the camera's entire [REST API](https://gopro.github.io/OpenGoPro/http)
 
 ### Usage
 - Turn on the camera and connect via USB
