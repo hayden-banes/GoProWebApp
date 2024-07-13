@@ -3,12 +3,10 @@ Control and manage a GoPro camera for timelapses, through your browser.
 
 ### Supports:
 - Start/stop timelapses
-- Change timelapse interval
 - Preview of last image taken
 - Media list
-- Download images
-- Clear SD
-- And many more features in development!
+- Automatic media download
+- Many more features in development or planned
 
 ### Usage
 - Turn on the camera and connect via USB
