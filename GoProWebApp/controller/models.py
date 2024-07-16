@@ -1,3 +1,5 @@
+from pathlib import Path
+from django.conf import settings
 import asyncio, threading, requests
 
 from threading import Thread, Event
@@ -14,7 +16,7 @@ class Image(models.Model):
 	date_time = models.DateTimeField(auto_now_add=True)
 	path = models.FilePathField()
 	name = models.CharField(max_length=20)
-	size = models.FloatField()
+	size = models.FloatField(null=True)
 
 class GoPro(models.Model):
 	identifier = models.CharField(
@@ -55,7 +57,7 @@ class GoPro(models.Model):
 	# 	else:
 	# 		print("I'm not running")
 
-	def start(self):
+	def start(self): #TODO rename to [dis]connect
 		if self.keep_alive_signal:
 			print("Keep alive signal is already active, verifying thread")
 			if ThreadManager.check_thread(self.keep_alive_id):
@@ -66,7 +68,7 @@ class GoPro(models.Model):
 		print(f"Starting keep alive signal for GoPro {self.identifier}")
 		self.keep_alive_signal = True
 		self.save()
-		self.keep_alive_id = ThreadManager.start(self.keep_alive_id, self.keep_alive_task()).ident
+		self.keep_alive_id = ThreadManager.start(self.keep_alive_id, self.keep_alive_task).ident
 		self.save()
 
 	def stop(self):
@@ -77,19 +79,19 @@ class GoPro(models.Model):
 		self.keep_alive_signal = False
 		self.save()
 		# if the thread is still running, then stop it
-		ThreadManager.stop(self.keep_alive_id, self.keep_alive_task())
+		ThreadManager.stop(self.keep_alive_id, self.keep_alive_task)
 		self.keep_alive_id = -1
 		self.save()
 		print("Keep alive signal stopped")
 
-	async def keep_alive_task(self):
+	def keep_alive_task(self):
 		url = self.base_url + "/gopro/camera/keep_alive"
 		while self.keep_alive_signal:
 			try:
 				if not self.connected: 
 					print("not connected")
-					await self.connect()
-				print(f"running {self.identifier} {self.base_url}")
+					self.connect()
+				# print(f"running {self.identifier} {self.base_url}")
 				requests.get(url, timeout=2) #TODO refactor outside of function
 			except RequestException:
 				print("Failed to communicate with GoPro")
@@ -101,7 +103,7 @@ class GoPro(models.Model):
 		if not self.keep_alive_signal: 
 			print("Keep alive signal caused stoppage")
 
-	async def connect(self):
+	def connect(self):
 		if not self.base_url:
 			self.generate_base_url()
 		while not self.connected and self.keep_alive_signal:
@@ -111,7 +113,7 @@ class GoPro(models.Model):
 				if response.ok:
 					print("Connected via USB")
 					self.connected = True
-					await sync_to_async(self.save)()
+					self.save()
 					return
 			except requests.Timeout as e:
 				print("Failed to enable wired control. Retrying wakeup")
@@ -143,6 +145,10 @@ class GoPro(models.Model):
 	def is_connected(self) -> bool:
 		return self.connected
 	
+	def enable_photo_mode(self) -> bool:
+		timelapse_preset_url = self.base_url + '/gopro/camera/presets/load?id=65536'
+		return requests.get(timelapse_preset_url, timeout=2).ok
+	
 	def get_status(self) -> dict:
 		try:
 			status = {}
@@ -159,9 +165,58 @@ class GoPro(models.Model):
 	def start_shutter(self) -> int:
 		try:
 			response = requests.get(self.base_url + "/gopro/camera/shutter/start", timeout=2)
+			print("Shutter")
+			sleep(1)  # wait for camera to finish
 			return response.status_code
+		
 		except RequestException as e:
 			print("Failed to start shutter")
+
+	def download_latest(self, delete) -> str:
+		# Determine folder and name of latest media
+		response = requests.get(self.base_url + '/gopro/media/list', timeout=2)
+		response_json = response.json()
+		if response.ok:
+			print("download_latest response", response.status_code)
+			latest_img_dir = response_json['media'][-1]['d']
+			latest_img_name = response_json['media'][-1]['fs'][-1]['n']
+
+			# Start single file download
+			self.download_media(latest_img_dir, latest_img_name)
+
+			if delete:
+				self.delete_media(latest_img_dir, latest_img_name)
+
+		else:
+			print("could not get media list")
+		
+		# return dest_path / latest_img_dir / latest_img_name
+	
+	def download_media(self, srcfolder, srcimage):
+		# Target URL
+		url = self.base_url + f"/videos/DCIM/{srcfolder}/{srcimage}"
+		# Path file will be saved in
+		path = (Path(__file__).parent / "static/controller/images").resolve()
+
+		try:
+			#Download Image
+			with requests.get(url, timeout=2, stream=True) as response:
+				print("download_media response", response.status_code)
+				response.raise_for_status()
+				with open(f"{path}/{srcimage}", 'wb') as f:
+					f.write(response.content)
+
+			# Store image reference in db
+			image = Image(path=path, name=srcimage)
+			image.save()
+
+		except requests.exceptions.RequestException as e:
+			print("error")
+
+	def delete_media(self, srcfolder, srcimage):
+		url = self.base_url + f"/gopro/media/delete/file?path={srcfolder}/{srcimage}"
+		response = requests.get(url, timeout=2)
+		print("delete_media response", response.status_code)
 
 	def set_auto_powerdown_off(self) -> int:
 		try:
@@ -199,10 +254,17 @@ class Timelapse(models.Model):
 			print(f"Timelapse task already running on {self.gopro.identifier}")
 			return
 		
-		print(f"Starting timelapse task for {self.gopro.identifier}")
-		self.task_id = ThreadManager.start(thread_id=self.task_id, thread_target=self.timelapse_task()).ident
-		self.task_signal = True
-		self.save()
+		if self.gopro.enable_photo_mode():
+			print(f"Starting timelapse task for {self.gopro.identifier}")
+
+			self.task_signal = True
+			self.save(update_fields=["task_signal"],force_update=True)
+			self.refresh_from_db()
+			self.task_id = ThreadManager.start(thread_id=self.task_id, thread_target=self.timelapse_task).ident
+			self.save(update_fields=["task_id"])
+			# print("Task signal set as: ", self.task_signal)
+		else:
+			print("Could not start timelapse as could not switch camera mode")
 
 	def stop(self):
 		if not self.task_signal:
@@ -210,24 +272,31 @@ class Timelapse(models.Model):
 			return
 
 		self.task_signal = False
-		self.save()
+		self.save(force_update=True)
 		ThreadManager.stop(thread_id=self.task_id, thread_target=self.timelapse_task)
 
 		self.task_id = -1
-		self.save()
+		self.save(force_update=True)
 		print("Timelapse task stopped")
 
 
-	async def timelapse_task(self):
+	def timelapse_task(self):
+		print("New timelapse task started")
+		self.refresh_from_db()
 		while self.task_signal:
 			try:
-				print("Shutter")
-				image = Image(path='', size=0.0, name='test')
-				await sync_to_async(image.save)()
-				self.photos_taken += 1
-				await sync_to_async(self.save)()
-				sleep(self.interval)
-			except RequestException:
+				if self.gopro.start_shutter() == 200:
+					self.photos_taken += 1
+					self.gopro.download_latest(delete=True)	
+					self.save()
+					sleep(self.interval)
+				else:
+					print("error, photot not taken")
+			except RequestException as e:
 				print("Picture not taken")
-			# await self.arefresh_from_db()
+				print(e)
+			
+			self.refresh_from_db()
+
+		print("Timelapse task exiting")
 

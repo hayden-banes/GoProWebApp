@@ -14,7 +14,7 @@
     <div class="row">
         <div class="col-sm">
             {% if image_list %}
-                <img src="{{ image_list.0.path }}" class="img-fluid" alt="">
+            <img src=" {% static 'controller/images/'|add:image_list.0.name %}" class="img-fluid" alt="">
             {% else %}
                 <img src="{% static 'controller/GOPR4764.JPG'%}" class="img-fluid" alt="">
             {% endif %}
@@ -48,14 +48,15 @@
     </div>
     <table class="table table-hover">
         <tr>
-            <th>Capture date</th><th>Name</th><th>Path</th>
+            <th>Capture date</th><th>Name</th><th>Size (b)</th>
         </tr>
         {% if image_list %}
             {% for image in image_list %}
                 <tr>
                     <td>{{ image.date_time | date:"G:i:s d-m-Y"}}</td>
                     <td>{{ image.name }}</td>
-                    <td>{{ image.path }}</td>
+                    {% comment %} <td>{{ image.path }}</td> {% endcomment %}
+                    <td>{{ image.size }}</td>
                 </tr>
             {% endfor %}
         {% else %}

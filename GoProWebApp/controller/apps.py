@@ -6,9 +6,10 @@ class ControllerConfig(AppConfig):
     name = 'controller'
 
     def ready(self):
-        from .models import GoPro
-        print('PRE --')
-        print(GoPro.objects.all().values())
+        from .models import GoPro, Timelapse
+        # print('PRE --')
+        # print(GoPro.objects.all().values())
         GoPro.objects.all().update(connected=False, keep_alive_id=-1)
-        print('POST --')
-        print(GoPro.objects.all().values())
+        Timelapse.objects.all().update(task_signal=False, task_id=-1)
+        # print('POST --')
+        # print(GoPro.objects.all().values())
