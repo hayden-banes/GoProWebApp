@@ -47,7 +47,6 @@ def timelapse_start(request):
     print("Timelapse started")
     return redirect('controller:home')
 
-
 def timelapse_stop(request):
     timelapse = get_object_or_404(
         Timelapse, gopro=GoPro.objects.get(identifier=GOPRO_ID))

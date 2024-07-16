@@ -13,7 +13,11 @@ class ThreadManager:
     def stop(thread_id, thread_target):
         task = ThreadManager.get_thread(thread_id, thread_target)
         if task.is_alive():
-            task.join()
+            print("task is running")
+            task.join(10)
+            print("task has joined or timeout")
+            print("is alive?", task.is_alive())
+
 
     @staticmethod
     def get_thread(thread_id, thread_target) -> threading.Thread:
@@ -25,7 +29,7 @@ class ThreadManager:
             print("Thread not running, but not found")
         print("Creating new thread")
 
-        return threading.Thread(target=asyncio.run, args=(thread_target,))
+        return threading.Thread(target=thread_target, args=())
     
     @staticmethod
     def check_thread(thread_id) -> bool:
